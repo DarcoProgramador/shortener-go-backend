@@ -10,8 +10,8 @@ import (
 )
 
 const createURL = `-- name: CreateURL :one
-INSERT INTO urls (url, shortCode, createdAt, updatedAt)
-VALUES (?, ?, ?, ?)
+INSERT INTO urls (url, shortCode, createdAt)
+VALUES (?, ?, ?)
 RETURNING id, url, shortCode, createdAt, updatedAt
 `
 
@@ -19,7 +19,6 @@ type CreateURLParams struct {
 	Url       string `json:"url"`
 	Shortcode string `json:"shortcode"`
 	Createdat string `json:"createdat"`
-	Updatedat string `json:"updatedat"`
 }
 
 type CreateURLRow struct {
@@ -31,12 +30,7 @@ type CreateURLRow struct {
 }
 
 func (q *Queries) CreateURL(ctx context.Context, arg CreateURLParams) (CreateURLRow, error) {
-	row := q.db.QueryRowContext(ctx, createURL,
-		arg.Url,
-		arg.Shortcode,
-		arg.Createdat,
-		arg.Updatedat,
-	)
+	row := q.db.QueryRowContext(ctx, createURL, arg.Url, arg.Shortcode, arg.Createdat)
 	var i CreateURLRow
 	err := row.Scan(
 		&i.ID,

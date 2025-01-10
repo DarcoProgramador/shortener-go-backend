@@ -8,11 +8,11 @@ import (
 )
 
 type ControllerInterface interface {
-	CreateShortLink(context.Context, string) (models.ShortLinkResponse, error)
-	GetOriginalLink(context.Context, string) (models.ShortLinkResponse, error)
-	UpdateLink(context.Context, string) (models.ShortLinkResponse, error)
+	CreateShortLink(context.Context, string) (*models.ShortLinkResponse, error)
+	GetOriginalLink(context.Context, string) (*models.ShortLinkResponse, error)
+	UpdateLink(context.Context, string, string) (*models.ShortLinkResponse, error)
 	DeleteShortLink(context.Context, string) error
-	GetStatShortLink(context.Context, string) (models.StatShortLinkResponse, error)
+	GetStatShortLink(context.Context, string) (*models.StatShortLinkResponse, error)
 }
 
 type Controller struct {
