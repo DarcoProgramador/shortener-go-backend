@@ -16,10 +16,10 @@ type ControllerInterface interface {
 }
 
 type Controller struct {
-	queries *db.Queries
+	queries db.Querier
 }
 
-func NewController(queries *db.Queries) ControllerInterface {
+func NewController(queries db.Querier) ControllerInterface {
 	return &Controller{
 		queries: queries,
 	}
