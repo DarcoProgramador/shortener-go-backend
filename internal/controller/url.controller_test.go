@@ -113,7 +113,83 @@ func TestController_GetOriginalLink(t *testing.T) {
 		want             *models.ShortLinkResponse
 		wantErr          bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "GetOriginalLink_OK",
+			args: args{
+				ctx:       context.TODO(),
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().GetURLByShortCode(mock.Anything, mock.Anything).RunAndReturn(
+					func(ctx context.Context, shortCode string) (db.GetURLByShortCodeRow, error) {
+						return db.GetURLByShortCodeRow{
+							ID:        1,
+							Url:       "http://www.google.com",
+							Shortcode: shortCode,
+							Createdat: "2021-01-01T00:00:00.000Z",
+							Updatedat: "2021-01-01T00:00:00.000Z",
+						}, nil
+					},
+				)
+				q.EXPECT().IncrementURLAccessCountByShortCode(mock.Anything, mock.Anything).Return(nil)
+				return q
+			},
+			want: &models.ShortLinkResponse{
+				Id:  1,
+				Url: "http://www.google.com",
+			},
+			wantErr: false,
+		},
+		{
+			name: "GetOriginalLink with error",
+			args: args{
+				ctx:       context.TODO(),
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().GetURLByShortCode(mock.Anything, mock.Anything).Return(db.GetURLByShortCodeRow{}, assert.AnError)
+				return q
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "GetOriginalLink with invalid date",
+			args: args{
+				ctx:       context.TODO(),
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().GetURLByShortCode(mock.Anything, mock.Anything).Return(db.GetURLByShortCodeRow{
+					ID:        1,
+					Url:       "http://www.google.com",
+					Shortcode: "abc123",
+					Createdat: "invalid date",
+				}, nil)
+				q.EXPECT().IncrementURLAccessCountByShortCode(mock.Anything, mock.Anything).Return(nil)
+				return q
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "GetOriginalLink with error incrementing access count",
+			args: args{
+				ctx:       context.TODO(),
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().GetURLByShortCode(mock.Anything, mock.Anything).Return(db.GetURLByShortCodeRow{}, nil)
+				q.EXPECT().IncrementURLAccessCountByShortCode(mock.Anything, mock.Anything).Return(assert.AnError)
+				return q
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -121,8 +197,8 @@ func TestController_GetOriginalLink(t *testing.T) {
 
 			c := NewController(q)
 
-			got, err := c.CreateShortLink(tt.args.ctx, tt.args.shortCode)
-			assert.Equal(t, tt.wantErr, err != nil)
+			got, err := c.GetOriginalLink(tt.args.ctx, tt.args.shortCode)
+			assert.Equal(t, tt.wantErr, err != nil, err)
 
 			if err != nil {
 				assert.Nil(t, got, "El valor de got debe ser nulo cuando se espera un error")
