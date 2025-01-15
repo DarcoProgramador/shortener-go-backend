@@ -1,0 +1,8 @@
+with-expecter: true
+issue-845-fix: True
+packages:
+    github.com/DarcoProgramador/shortener-go-backend/internal/database/sqlc:
+      config:
+        dir: "mocks/db_mock"
+      interfaces:
+        Querier:
