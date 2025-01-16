@@ -85,7 +85,7 @@ func (c *Controller) UpdateLink(ctx context.Context, url, shortCode string) (*mo
 	}
 
 	var createdAt *time.Time
-	if !data.Updatedat.Valid {
+	if !data.Createdat.Valid {
 		return nil, fmt.Errorf("invalid date")
 	}
 	createdAt = &data.Createdat.Time

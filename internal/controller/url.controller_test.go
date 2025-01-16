@@ -46,6 +46,7 @@ func TestController_CreateShortLink(t *testing.T) {
 						}, nil
 					},
 				)
+
 				return q
 			},
 			want: &models.ShortLinkResponse{
@@ -147,8 +148,9 @@ func TestController_GetOriginalLink(t *testing.T) {
 				return q
 			},
 			want: &models.ShortLinkResponse{
-				Id:  1,
-				Url: "http://www.google.com",
+				Id:        1,
+				Url:       "http://www.google.com",
+				ShortCode: "abc123",
 			},
 			wantErr: false,
 		},
@@ -178,10 +180,7 @@ func TestController_GetOriginalLink(t *testing.T) {
 					ID:        1,
 					Url:       "http://www.google.com",
 					Shortcode: "abc123",
-					Createdat: sql.NullTime{
-						Time:  time.Now(),
-						Valid: false,
-					},
+					Createdat: sql.NullTime{},
 				}, nil)
 				q.EXPECT().IncrementURLAccessCountByShortCode(mock.Anything, mock.Anything).Return(nil)
 				return q
@@ -221,6 +220,249 @@ func TestController_GetOriginalLink(t *testing.T) {
 
 			assert.Equal(t, tt.want.Id, got.Id, "Los valores de los campos Id no coinciden")
 			assert.Equal(t, tt.want.Url, got.Url, "Los valores de los campos Url no coinciden")
+			assert.Equal(t, tt.want.ShortCode, got.ShortCode, "Los valores de los campos ShortCode no coinciden")
+			assert.NotNil(t, got.CreatedAt, "El campo CreatedAt no debe ser nulo")
+		})
+	}
+}
+
+func TestController_UpdateLink(t *testing.T) {
+	type args struct {
+		ctx       context.Context
+		url       string
+		shortCode string
+	}
+	tests := []struct {
+		name             string
+		args             args
+		mockExpectations func(t *testing.T) *dbMock.MockQuerier
+		want             *models.ShortLinkResponse
+		wantErr          bool
+	}{
+		{
+			name: "UpdateLink_OK",
+			args: args{
+				ctx:       context.TODO(),
+				url:       "http://www.google.com",
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().UpdateURLByShortCode(mock.Anything, mock.Anything).RunAndReturn(
+					func(ctx context.Context, arg db.UpdateURLByShortCodeParams) (db.UpdateURLByShortCodeRow, error) {
+						return db.UpdateURLByShortCodeRow{
+							ID:        1,
+							Url:       arg.Url,
+							Shortcode: arg.Shortcode,
+							Createdat: sql.NullTime{
+								Time:  time.Now(),
+								Valid: true,
+							},
+							Updatedat: sql.NullTime{
+								Time:  time.Now(),
+								Valid: true,
+							},
+						}, nil
+					},
+				)
+				return q
+			},
+			want: &models.ShortLinkResponse{
+				Id:        1,
+				Url:       "http://www.google.com",
+				ShortCode: "abc123",
+			},
+			wantErr: false,
+		},
+		{
+			name: "UpdateLink with invalid URL",
+			args: args{
+				ctx:       context.TODO(),
+				url:       "asdasd",
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				// No se espera ninguna llamada a UpdateURLByShortCode
+				return q
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "UpdateLink with error",
+			args: args{
+				ctx:       context.TODO(),
+				url:       "http://www.google.com",
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().UpdateURLByShortCode(mock.Anything, mock.Anything).Return(db.UpdateURLByShortCodeRow{}, assert.AnError)
+				return q
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "UpdateLink with nil createdAt date",
+			args: args{
+				ctx:       context.TODO(),
+				url:       "http://www.google.com",
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().UpdateURLByShortCode(mock.Anything, mock.Anything).Return(db.UpdateURLByShortCodeRow{
+					ID:        1,
+					Url:       "http://www.google.com",
+					Shortcode: "abc123",
+					Createdat: sql.NullTime{},
+					Updatedat: sql.NullTime{
+						Time:  time.Now(),
+						Valid: true,
+					},
+				}, nil)
+				return q
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := tt.mockExpectations(t)
+
+			c := NewController(q)
+
+			got, err := c.UpdateLink(tt.args.ctx, tt.args.url, tt.args.shortCode)
+			assert.Equal(t, tt.wantErr, err != nil, err)
+
+			if err != nil {
+				assert.Nil(t, got, "El valor de got debe ser nulo cuando se espera un error")
+				return
+			}
+
+			assert.Equal(t, tt.want.Id, got.Id, "Los valores de los campos Id no coinciden")
+			assert.Equal(t, tt.want.Url, got.Url, "Los valores de los campos Url no coinciden")
+			assert.Equal(t, tt.want.ShortCode, got.ShortCode, "Los valores de los campos ShortCode no coinciden")
+			assert.NotNil(t, got.CreatedAt, "El campo CreatedAt no debe ser nulo")
+			assert.NotNil(t, got.UpdatedAt, "El campo UpdatedAt no debe ser nulo")
+		})
+	}
+}
+
+func TestController_GetStatShortLink(t *testing.T) {
+	type args struct {
+		ctx       context.Context
+		shortCode string
+	}
+	tests := []struct {
+		name             string
+		mockExpectations func(t *testing.T) *dbMock.MockQuerier
+		args             args
+		want             *models.StatShortLinkResponse
+		wantErr          bool
+	}{
+		{
+			name: "GetStatShortLink_OK",
+			args: args{
+				ctx:       context.TODO(),
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().GetURLStatsByShortCode(mock.Anything, mock.Anything).RunAndReturn(
+					func(ctx context.Context, shortCode string) (db.Url, error) {
+						return db.Url{
+							ID:        1,
+							Url:       "http://www.google.com",
+							Shortcode: shortCode,
+							Createdat: sql.NullTime{
+								Time:  time.Now(),
+								Valid: true,
+							},
+							Updatedat: sql.NullTime{
+								Time:  time.Now(),
+								Valid: true,
+							},
+							Accesscount: sql.NullInt64{
+								Int64: 10,
+								Valid: true,
+							},
+						}, nil
+					},
+				)
+				return q
+			},
+			want: &models.StatShortLinkResponse{
+				Id:          1,
+				Url:         "http://www.google.com",
+				ShortCode:   "abc123",
+				AccessCount: 10,
+			},
+			wantErr: false,
+		},
+		{
+			name: "GetStatShortLink with error",
+			args: args{
+				ctx:       context.TODO(),
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().GetURLStatsByShortCode(mock.Anything, mock.Anything).Return(db.Url{}, assert.AnError)
+				return q
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "GetStatShortLink with invalid date",
+			args: args{
+				ctx:       context.TODO(),
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().GetURLStatsByShortCode(mock.Anything, mock.Anything).RunAndReturn(
+					func(ctx context.Context, shortCode string) (db.Url, error) {
+						return db.Url{
+							ID:        1,
+							Url:       "http://www.google.com",
+							Shortcode: shortCode,
+							Createdat: sql.NullTime{},
+							Accesscount: sql.NullInt64{
+								Int64: 10,
+								Valid: true,
+							},
+						}, nil
+					},
+				)
+				return q
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := tt.mockExpectations(t)
+
+			c := NewController(q)
+
+			got, err := c.GetStatShortLink(tt.args.ctx, tt.args.shortCode)
+			assert.Equal(t, tt.wantErr, err != nil, err)
+
+			if err != nil {
+				assert.Nil(t, got, "El valor de got debe ser nulo cuando se espera un error")
+				return
+			}
+
+			assert.Equal(t, tt.want.Id, got.Id, "Los valores de los campos Id no coinciden")
+			assert.Equal(t, tt.want.Url, got.Url, "Los valores de los campos Url no coinciden")
+			assert.Equal(t, tt.want.ShortCode, got.ShortCode, "Los valores de los campos ShortCode no coinciden")
+			assert.Equal(t, tt.want.AccessCount, got.AccessCount, "Los valores de los campos AccessCount no coinciden")
 			assert.NotNil(t, got.CreatedAt, "El campo CreatedAt no debe ser nulo")
 		})
 	}
