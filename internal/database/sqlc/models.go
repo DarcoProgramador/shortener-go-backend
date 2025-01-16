@@ -12,7 +12,7 @@ type Url struct {
 	ID          int64         `json:"id"`
 	Url         string        `json:"url"`
 	Shortcode   string        `json:"shortcode"`
-	Createdat   string        `json:"createdat"`
-	Updatedat   string        `json:"updatedat"`
+	Createdat   sql.NullTime  `json:"createdat"`
+	Updatedat   sql.NullTime  `json:"updatedat"`
 	Accesscount sql.NullInt64 `json:"accesscount"`
 }

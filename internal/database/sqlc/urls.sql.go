@@ -7,30 +7,30 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createURL = `-- name: CreateURL :one
-INSERT INTO urls (url, shortCode, createdAt)
-VALUES (?, ?, ?)
+INSERT INTO urls (url, shortCode)
+VALUES (?, ?)
 RETURNING id, url, shortCode, createdAt, updatedAt
 `
 
 type CreateURLParams struct {
 	Url       string `json:"url"`
 	Shortcode string `json:"shortcode"`
-	Createdat string `json:"createdat"`
 }
 
 type CreateURLRow struct {
-	ID        int64  `json:"id"`
-	Url       string `json:"url"`
-	Shortcode string `json:"shortcode"`
-	Createdat string `json:"createdat"`
-	Updatedat string `json:"updatedat"`
+	ID        int64        `json:"id"`
+	Url       string       `json:"url"`
+	Shortcode string       `json:"shortcode"`
+	Createdat sql.NullTime `json:"createdat"`
+	Updatedat sql.NullTime `json:"updatedat"`
 }
 
 func (q *Queries) CreateURL(ctx context.Context, arg CreateURLParams) (CreateURLRow, error) {
-	row := q.db.QueryRowContext(ctx, createURL, arg.Url, arg.Shortcode, arg.Createdat)
+	row := q.db.QueryRowContext(ctx, createURL, arg.Url, arg.Shortcode)
 	var i CreateURLRow
 	err := row.Scan(
 		&i.ID,
@@ -64,11 +64,11 @@ WHERE shortCode = ?
 `
 
 type GetURLByShortCodeRow struct {
-	ID        int64  `json:"id"`
-	Url       string `json:"url"`
-	Shortcode string `json:"shortcode"`
-	Createdat string `json:"createdat"`
-	Updatedat string `json:"updatedat"`
+	ID        int64        `json:"id"`
+	Url       string       `json:"url"`
+	Shortcode string       `json:"shortcode"`
+	Createdat sql.NullTime `json:"createdat"`
+	Updatedat sql.NullTime `json:"updatedat"`
 }
 
 func (q *Queries) GetURLByShortCode(ctx context.Context, shortcode string) (GetURLByShortCodeRow, error) {
@@ -129,17 +129,17 @@ RETURNING id, url, shortCode, createdAt, updatedAt
 `
 
 type UpdateURLByShortCodeParams struct {
-	Url       string `json:"url"`
-	Updatedat string `json:"updatedat"`
-	Shortcode string `json:"shortcode"`
+	Url       string       `json:"url"`
+	Updatedat sql.NullTime `json:"updatedat"`
+	Shortcode string       `json:"shortcode"`
 }
 
 type UpdateURLByShortCodeRow struct {
-	ID        int64  `json:"id"`
-	Url       string `json:"url"`
-	Shortcode string `json:"shortcode"`
-	Createdat string `json:"createdat"`
-	Updatedat string `json:"updatedat"`
+	ID        int64        `json:"id"`
+	Url       string       `json:"url"`
+	Shortcode string       `json:"shortcode"`
+	Createdat sql.NullTime `json:"createdat"`
+	Updatedat sql.NullTime `json:"updatedat"`
 }
 
 func (q *Queries) UpdateURLByShortCode(ctx context.Context, arg UpdateURLByShortCodeParams) (UpdateURLByShortCodeRow, error) {

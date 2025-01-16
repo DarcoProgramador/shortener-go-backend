@@ -9,8 +9,8 @@ FROM urls
 WHERE shortCode = ?;
 
 -- name: CreateURL :one
-INSERT INTO urls (url, shortCode, createdAt)
-VALUES (?, ?, ?)
+INSERT INTO urls (url, shortCode)
+VALUES (?, ?)
 RETURNING id, url, shortCode, createdAt, updatedAt;
 
 -- name: UpdateURLByShortCode :one

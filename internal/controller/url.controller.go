@@ -2,6 +2,8 @@ package controller
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"time"
 
 	db "github.com/DarcoProgramador/shortener-go-backend/internal/database/sqlc"
@@ -16,13 +18,9 @@ func (c *Controller) CreateShortLink(ctx context.Context, url string) (*models.S
 
 	code := utils.RandomString(6)
 
-	createdAt := time.Now()
-	strCreatedAt := utils.FormatToISODate(&createdAt)
-
 	data, err := c.queries.CreateURL(ctx, db.CreateURLParams{
 		Url:       url,
 		Shortcode: code,
-		Createdat: strCreatedAt,
 	})
 
 	if err != nil {
@@ -33,7 +31,7 @@ func (c *Controller) CreateShortLink(ctx context.Context, url string) (*models.S
 		Id:        int(data.ID),
 		Url:       data.Url,
 		ShortCode: data.Shortcode,
-		CreatedAt: &createdAt,
+		CreatedAt: &data.Createdat.Time,
 	}, nil
 }
 
@@ -48,10 +46,13 @@ func (c *Controller) GetOriginalLink(ctx context.Context, shortCode string) (*mo
 		return nil, err
 	}
 
-	createdAt, updatedAt, err := utils.ParseISOCreateAndUpdateAt(data.Createdat, data.Updatedat)
-
-	if err != nil {
-		return nil, err
+	var createdAt, updatedAt *time.Time
+	if !data.Createdat.Valid {
+		return nil, fmt.Errorf("invalid date")
+	}
+	createdAt = &data.Createdat.Time
+	if data.Updatedat.Valid {
+		updatedAt = &data.Updatedat.Time
 	}
 
 	return &models.ShortLinkResponse{
@@ -68,12 +69,14 @@ func (c *Controller) UpdateLink(ctx context.Context, url, shortCode string) (*mo
 		return nil, err
 	}
 
-	updatedAt := time.Now()
-	strUpdatedAt := utils.FormatToISODate(&updatedAt)
+	updatedAt := sql.NullTime{
+		Time:  time.Now(),
+		Valid: true,
+	}
 
 	data, err := c.queries.UpdateURLByShortCode(ctx, db.UpdateURLByShortCodeParams{
 		Url:       url,
-		Updatedat: strUpdatedAt,
+		Updatedat: updatedAt,
 		Shortcode: shortCode,
 	})
 
@@ -81,17 +84,18 @@ func (c *Controller) UpdateLink(ctx context.Context, url, shortCode string) (*mo
 		return nil, err
 	}
 
-	createdAt, err := utils.ParseISODate(data.Createdat)
-	if err != nil {
-		return nil, err
+	var createdAt *time.Time
+	if !data.Updatedat.Valid {
+		return nil, fmt.Errorf("invalid date")
 	}
+	createdAt = &data.Createdat.Time
 
 	return &models.ShortLinkResponse{
 		Id:        int(data.ID),
 		Url:       data.Url,
 		ShortCode: data.Shortcode,
 		CreatedAt: createdAt,
-		UpdatedAt: &updatedAt,
+		UpdatedAt: &updatedAt.Time,
 	}, nil
 }
 
@@ -105,10 +109,13 @@ func (c *Controller) GetStatShortLink(ctx context.Context, shortCode string) (*m
 		return nil, err
 	}
 
-	createdAt, updatedAt, err := utils.ParseISOCreateAndUpdateAt(data.Createdat, data.Updatedat)
-
-	if err != nil {
-		return nil, err
+	var createdAt, updatedAt *time.Time
+	if !data.Createdat.Valid {
+		return nil, fmt.Errorf("invalid date")
+	}
+	createdAt = &data.Createdat.Time
+	if data.Updatedat.Valid {
+		updatedAt = &data.Updatedat.Time
 	}
 
 	return &models.StatShortLinkResponse{

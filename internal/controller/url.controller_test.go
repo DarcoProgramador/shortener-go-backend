@@ -2,7 +2,9 @@ package controller
 
 import (
 	"context"
+	"database/sql"
 	"testing"
+	"time"
 
 	db "github.com/DarcoProgramador/shortener-go-backend/internal/database/sqlc"
 	"github.com/DarcoProgramador/shortener-go-backend/internal/models"
@@ -37,7 +39,10 @@ func TestController_CreateShortLink(t *testing.T) {
 							ID:        1,
 							Url:       arg.Url,
 							Shortcode: arg.Shortcode,
-							Createdat: arg.Createdat,
+							Createdat: sql.NullTime{
+								Time:  time.Now(),
+								Valid: true,
+							},
 						}, nil
 					},
 				)
@@ -127,8 +132,14 @@ func TestController_GetOriginalLink(t *testing.T) {
 							ID:        1,
 							Url:       "http://www.google.com",
 							Shortcode: shortCode,
-							Createdat: "2021-01-01T00:00:00.000Z",
-							Updatedat: "2021-01-01T00:00:00.000Z",
+							Createdat: sql.NullTime{
+								Time:  time.Now(),
+								Valid: true,
+							},
+							Updatedat: sql.NullTime{
+								Time:  time.Now(),
+								Valid: true,
+							},
 						}, nil
 					},
 				)
@@ -167,7 +178,10 @@ func TestController_GetOriginalLink(t *testing.T) {
 					ID:        1,
 					Url:       "http://www.google.com",
 					Shortcode: "abc123",
-					Createdat: "invalid date",
+					Createdat: sql.NullTime{
+						Time:  time.Now(),
+						Valid: false,
+					},
 				}, nil)
 				q.EXPECT().IncrementURLAccessCountByShortCode(mock.Anything, mock.Anything).Return(nil)
 				return q
