@@ -6,3 +6,8 @@ packages:
         dir: "mocks/db_mock"
       interfaces:
         Querier:
+    github.com/DarcoProgramador/shortener-go-backend/internal/controller:
+      config:
+        dir: "mocks/controller_mock"
+      interfaces:
+        ControllerInterface:
