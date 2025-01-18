@@ -52,7 +52,6 @@ func (h *Handlers) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetOriginal(w http.ResponseWriter, r *http.Request) {
-	//TODO: implement
 	w.Header().Set("Content-Type", "application/json")
 	code := r.PathValue("code")
 	if code == "" {
@@ -61,8 +60,25 @@ func (h *Handlers) GetOriginal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data, err := h.controller.GetOriginalLink(r.Context(), code)
+
+	if err != nil {
+		h.logger.Error("Error getting original link", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
+		return
+	}
+
+	responseData, err := json.Marshal(data)
+	if err != nil {
+		h.logger.Error("Error marshalling response data", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "internal server error"}`))
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message": "GetOriginal", "code": "` + code + `"}`))
+	w.Write(responseData)
 }
 
 func (h *Handlers) Update(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +107,6 @@ func (h *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetStat(w http.ResponseWriter, r *http.Request) {
-	//TODO: implement
 	w.Header().Set("Content-Type", "application/json")
 	code := r.PathValue("code")
 	if code == "" {
@@ -99,6 +114,24 @@ func (h *Handlers) GetStat(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"message": "code is required"}`))
 		return
 	}
+
+	data, err := h.controller.GetStatShortLink(r.Context(), code)
+
+	if err != nil {
+		h.logger.Error("Error getting original link", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
+		return
+	}
+
+	responseData, err := json.Marshal(data)
+	if err != nil {
+		h.logger.Error("Error marshalling response data", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "internal server error"}`))
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message": "GetStat" , "code": "` + code + `"}`))
+	w.Write(responseData)
 }
