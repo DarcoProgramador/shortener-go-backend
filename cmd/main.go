@@ -16,7 +16,7 @@ func main() {
 	ctx := context.Background()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	dbSql, err := database.InitDB(ctx)
+	dbSql, err := database.InitDB(ctx, "./urls.db")
 	if err != nil {
 		logger.Error("cannot init db", slog.Any("msg", err))
 		os.Exit(1)

@@ -8,7 +8,7 @@ import (
 )
 
 func TestInitDB(t *testing.T) {
-	db, err := InitDB(context.TODO())
+	db, err := InitDB(context.TODO(), "./urls.db")
 	if err != nil {
 		t.Errorf("cannot init db: %v", err)
 	}

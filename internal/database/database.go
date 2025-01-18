@@ -7,7 +7,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func InitDB(ctx context.Context) (*sql.DB, error) {
+func InitDB(ctx context.Context, path string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", "./urls.db")
 	if err != nil {
 		return nil, err
