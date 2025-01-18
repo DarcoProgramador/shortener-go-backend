@@ -95,12 +95,19 @@ func (h *Handlers) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
-	//TODO: implement
 	w.Header().Set("Content-Type", "application/json")
 	code := r.PathValue("code")
 	if code == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"message": "code is required"}`))
+		return
+	}
+
+	err := h.controller.DeleteShortLink(r.Context(), code)
+	if err != nil {
+		h.logger.Error("Error deleting short link", "error", err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
