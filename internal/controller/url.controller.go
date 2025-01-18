@@ -100,6 +100,10 @@ func (c *Controller) UpdateLink(ctx context.Context, url, shortCode string) (*mo
 }
 
 func (c *Controller) DeleteShortLink(ctx context.Context, shortCode string) error {
+	_, err := c.queries.GetURLStatsByShortCode(ctx, shortCode)
+	if err != nil {
+		return err
+	}
 	return c.queries.DeleteURLByShortCode(ctx, shortCode)
 }
 

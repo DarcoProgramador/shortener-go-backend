@@ -467,3 +467,68 @@ func TestController_GetStatShortLink(t *testing.T) {
 		})
 	}
 }
+
+func TestController_DeleteShortLink(t *testing.T) {
+	type args struct {
+		ctx       context.Context
+		shortCode string
+	}
+	tests := []struct {
+		name             string
+		args             args
+		mockExpectations func(t *testing.T) *dbMock.MockQuerier
+		wantErr          bool
+	}{
+		{
+			name: "DeleteShortLink_OK",
+			args: args{
+				ctx:       context.TODO(),
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().GetURLStatsByShortCode(mock.Anything, mock.Anything).Return(db.Url{}, nil)
+				q.EXPECT().DeleteURLByShortCode(mock.Anything, mock.Anything).Return(nil)
+				return q
+			},
+			wantErr: false,
+		},
+		{
+			name: "DeleteShortLink with error",
+			args: args{
+				ctx:       context.TODO(),
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().GetURLStatsByShortCode(mock.Anything, mock.Anything).Return(db.Url{}, assert.AnError)
+				return q
+			},
+			wantErr: true,
+		},
+		{
+			name: "DeleteShortLink with error deleting",
+			args: args{
+				ctx:       context.TODO(),
+				shortCode: "abc123",
+			},
+			mockExpectations: func(t *testing.T) *dbMock.MockQuerier {
+				q := dbMock.NewMockQuerier(t)
+				q.EXPECT().GetURLStatsByShortCode(mock.Anything, mock.Anything).Return(db.Url{}, nil)
+				q.EXPECT().DeleteURLByShortCode(mock.Anything, mock.Anything).Return(assert.AnError)
+				return q
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := tt.mockExpectations(t)
+
+			c := NewController(q)
+
+			err := c.DeleteShortLink(tt.args.ctx, tt.args.shortCode)
+			assert.Equal(t, tt.wantErr, err != nil, err)
+		})
+	}
+}
